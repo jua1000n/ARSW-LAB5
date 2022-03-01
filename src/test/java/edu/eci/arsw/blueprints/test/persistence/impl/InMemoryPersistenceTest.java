@@ -130,7 +130,6 @@ public class InMemoryPersistenceTest {
         blueprintsReturn.add(bp0);
         blueprintsReturn.add(bp1);
 
-        System.out.println(ibpp.getAllBlueprints()==(blueprintsReturn));
 
         assertNotNull("Loading a previously stored blueprint returned null.",ibpp.getAllBlueprints());
 

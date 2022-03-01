@@ -57,7 +57,7 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence{
     public Set<Blueprint> getBlueprintsByAuthor(String author) throws BlueprintNotFoundException {
         Set<Blueprint> blueprintsReturn = new HashSet<Blueprint> ();
         for (Tuple<String,String> a: blueprints.keySet()) {
-            if (author == a.getElem1()) {
+            if (author.equals(a.getElem1())) {
                 blueprintsReturn.add(blueprints.get(a));
             }
         }
@@ -71,6 +71,11 @@ public class InMemoryBlueprintPersistence implements BlueprintsPersistence{
             blueprintsReturn.add(blueprints.get(a));
         }
         return blueprintsReturn;
+    }
+
+    @Override
+    public void deleteBlueprint(String author, String bprintname) throws BlueprintNotFoundException {
+        blueprints.remove(new Tuple<>(author, bprintname));
     }
 
 

@@ -7,15 +7,16 @@ package edu.eci.arsw.blueprints.controllers;
 
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonToken;
 import edu.eci.arsw.blueprints.model.Blueprint;
+import edu.eci.arsw.blueprints.model.Point;
 import edu.eci.arsw.blueprints.services.BlueprintsServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
  * @author hcadavid
  */
 @RestController
-@RequestMapping(value = "/blueprint")
+@RequestMapping(value = "/blueprints")
 public class BlueprintAPIController {
 
     @Autowired
@@ -38,11 +39,10 @@ public class BlueprintAPIController {
         try {
             Set<Blueprint> blueprintSet = blueprintsServices.getAllBlueprints();
             //obtener datos que se enviarán a través del API
-            System.out.println(blueprintSet);
-            return new ResponseEntity<>(new Gson().toJson(blueprintSet), HttpStatus.ACCEPTED);
+            return new ResponseEntity<>(new Gson().toJson(blueprintsJson(blueprintSet)), HttpStatus.ACCEPTED);
         } catch (Exception ex) {
             Logger.getLogger(ex.getMessage());
-            return new ResponseEntity<>("Error bla bla bla", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
@@ -51,22 +51,88 @@ public class BlueprintAPIController {
         try {
             Set<Blueprint> blueprintSet = blueprintsServices.getBlueprintsByAuthor(author);
             //obtener datos que se enviarán a través del API
-            System.out.println(blueprintSet);
-            return new ResponseEntity<>(new Gson().toJson(blueprintSet), HttpStatus.ACCEPTED);
+            if (blueprintSet.size() != 0) {
+                return new ResponseEntity<>(new Gson().toJson(authorJson(blueprintSet)), HttpStatus.ACCEPTED);
+            } else {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+
         } catch (Exception ex) {
             Logger.getLogger(ex.getMessage());
-            return new ResponseEntity<>("Error bla bla bla", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
     }
 
-    private String convertStringJson(Set<Blueprint> cadena) {
+    @RequestMapping(method = RequestMethod.GET, value = "/{author}/{bpname}")
+    public ResponseEntity<?> getBlueprint(@PathVariable String author, @PathVariable String bpname) {
+        try {
+            Blueprint blueprintSet = blueprintsServices.getBlueprint(author, bpname);
+            //obtener datos que se enviarán a través del API
+            if (blueprintSet == null) {
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
 
-        List<Blueprint> blueprintList = new ArrayList<>(cadena);
-        String bluCadena = "{\"blueprints\": ";
-        for (Blueprint blueprint: blueprintList) {
-            bluCadena += "{\"Author\": \"" + blueprint.getAuthor() + "\", \"Name\": \"" + blueprint.getName() + "\", \"Points\": \"" + blueprint.getPoints() + "\"}";
+            } else {
+                return new ResponseEntity<>(new Gson().toJson(authorNameJson(blueprintSet)), HttpStatus.ACCEPTED);
+            }
+
+        } catch (Exception ex) {
+            //Logger.getLogger(ex.getMessage());
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        return bluCadena;
+    }
+
+    @RequestMapping(value = "/create",method = RequestMethod.POST)
+    public ResponseEntity<?> manejadorPostRecurso(@RequestBody Blueprint blueprint){
+        try {
+            //registrar dato
+            blueprintsServices.addNewBlueprint(blueprint);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (Exception ex) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+    }
+
+    @RequestMapping(value = "/{author}/{bpname}",method = RequestMethod.PUT)
+    public ResponseEntity<?> manejadorPutRecurso(@PathVariable String author, @PathVariable String bpname, @RequestBody Blueprint blueprint){
+        try {
+            //registrar dato
+            blueprintsServices.deleteBlueprint(author, bpname);
+            blueprintsServices.addNewBlueprint(blueprint);
+            return new ResponseEntity<>(HttpStatus.CREATED);
+        } catch (Exception ex) {
+            return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+        }
+
+    }
+
+    private JsonArray authorNameJson(Blueprint blueprint) {
+        JsonArray jsonArray = new JsonArray();
+        for (Point a:blueprint.getPoints()) {
+            JsonObject p = new JsonObject();
+            p.addProperty("x", a.getX());
+            p.addProperty("y", a.getY());
+            jsonArray.add(p);
+        }
+        return jsonArray;
+    }
+
+    private JsonArray authorJson(Set<Blueprint> blueprint) {
+        JsonArray jsonArray = new JsonArray();
+        for (Blueprint a:blueprint) {
+            JsonObject p = new JsonObject();
+            p.addProperty("author", a.getAuthor());
+            p.addProperty("name", a.getName());
+            p.add("points",authorNameJson(a));
+            jsonArray.add(p);
+        }
+        return jsonArray;
+    }
+
+    private JsonObject blueprintsJson(Set<Blueprint> blueprint) {
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("blueprints", authorJson(blueprint));
+        return jsonObject;
     }
 }
 
