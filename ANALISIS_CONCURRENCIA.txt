@@ -1,0 +1,3 @@
+Qué condiciones de carrera se podrían presentar?
+En el momento que se este haciendo una consulta puede que se este modificando algo al tiempo, provocando que de valores
+incorrectos
